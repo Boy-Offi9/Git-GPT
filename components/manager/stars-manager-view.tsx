@@ -3,54 +3,56 @@
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { CheckSquare, Compass, LoaderCircle, Square, Star, UserPlus } from "lucide-react";
+import {
+  CheckSquare,
+  ExternalLink,
+  LoaderCircle,
+  Square,
+  Star,
+} from "lucide-react";
 import type {
   BulkUnfollowProgress,
   BulkUnfollowResult,
-  HtmlFollower,
-  HtmlFollowersPayload,
+  HtmlRepo,
+  HtmlReposPayload,
 } from "@/types/github";
 import { emptyBulkProgress } from "@/types/github";
 import { API_ERROR_KEYS } from "@/lib/i18n/core";
 import { formatCount } from "@/lib/format";
-import { buildFollowersPageUrl } from "@/lib/github/html-followers-url";
+import { buildReposPageUrl } from "@/lib/github/html-repos-url";
 import {
-  followManySequential,
-  followOneUsername,
-} from "@/components/app/use-unfollow";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+  starManySequential,
+  starOneRepo,
+  unstarOneRepo,
+} from "@/components/app/use-star";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/navigation/page-header";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { SelectionBar } from "@/components/users/selection-bar";
-import { FollowConfirmDialog } from "@/components/dialogs/follow-confirm";
+import { StarConfirmDialog } from "@/components/dialogs/star-confirm";
 import { BulkProgressDialog } from "@/components/dialogs/bulk-progress";
 import { useI18n } from "@/components/i18n/i18n-provider";
-import { useGithubData } from "@/components/app/github-data-provider";
 import {
-  getExploreStore,
-  getExploreStoreServerSnapshot,
-  queueExploreExtract,
-  setExploreStore,
-  subscribeExploreStore,
-  updateExploreUsers,
-} from "@/components/manager/explore-session-store";
-import { queueStarsExtract } from "@/components/manager/stars-session-store";
+  getStarsStore,
+  getStarsStoreServerSnapshot,
+  setStarsStore,
+  subscribeStarsStore,
+  updateStarsRepos,
+} from "@/components/manager/stars-session-store";
 import { cn } from "@/lib/utils";
 
 const BULK_SIZES = [10, 20, 30, 50] as const;
 
-export function FollowersManagerView() {
+export function StarsManagerView() {
   const { t } = useI18n();
   const router = useRouter();
-  const { addFollowing, data } = useGithubData();
-  const explore = useSyncExternalStore(
-    subscribeExploreStore,
-    getExploreStore,
-    getExploreStoreServerSnapshot,
+  const stars = useSyncExternalStore(
+    subscribeStarsStore,
+    getStarsStore,
+    getStarsStoreServerSnapshot,
   );
-  const { url, payload, users, error, pendingExtract } = explore;
+  const { url, payload, repositories, error, pendingExtract } = stars;
   const [pending, startTransition] = useTransition();
   const [rowPending, setRowPending] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -67,58 +69,39 @@ export function FollowersManagerView() {
   const runIdRef = useRef(0);
   const [runId, setRunId] = useState(0);
 
-  const followingLogins = new Set(
-    (data?.following ?? []).map((u) => u.login.toLowerCase()),
-  );
-
-  function withLocalFollowing(next: HtmlFollower[]): HtmlFollower[] {
-    return next.map((user) => ({
-      ...user,
-      isFollowing:
-        user.isFollowing || followingLogins.has(user.username.toLowerCase()),
-    }));
-  }
-
-  const list = (Array.isArray(users) ? users : []).map((user) => ({
-    ...user,
-    isFollowing:
-      user.isFollowing || followingLogins.has(user.username.toLowerCase()),
-  }));
-  const notFollowing = list.filter((u) => !u.isFollowing);
-  const followingCount = list.length - notFollowing.length;
-  const notFollowingCount = notFollowing.length;
-  const selectableUsernames = notFollowing.map((u) => u.username);
+  const list = Array.isArray(repositories) ? repositories : [];
+  const notStarred = list.filter((r) => !r.isStarred);
+  const starredCount = list.length - notStarred.length;
+  const notStarredCount = notStarred.length;
+  const selectableIds = notStarred.map((r) => r.fullName);
   const allSelectableSelected =
-    selectableUsernames.length > 0 &&
-    selectableUsernames.every((username) => selected.has(username));
+    selectableIds.length > 0 &&
+    selectableIds.every((id) => selected.has(id));
 
   function setUrl(next: string) {
-    setExploreStore({ url: next });
+    setStarsStore({ url: next });
   }
 
-  function toggle(username: string, value: boolean) {
+  function toggle(fullName: string, value: boolean) {
     setSelected((current) => {
       const next = new Set(current);
-      if (value) {
-        next.add(username);
-      } else {
-        next.delete(username);
-      }
+      if (value) next.add(fullName);
+      else next.delete(fullName);
       return next;
     });
   }
 
   function selectFirst(limit: number) {
-    const targets = notFollowing.slice(0, limit).map((u) => u.username);
+    const targets = notStarred.slice(0, limit).map((r) => r.fullName);
     if (targets.length === 0) {
-      toast.message(t("managerNothingToFollow"));
+      toast.message(t("starsNothingToStar"));
       return;
     }
     setSelected(new Set(targets));
   }
 
-  function selectAllNotFollowing() {
-    setSelected(new Set(selectableUsernames));
+  function selectAllNotStarred() {
+    setSelected(new Set(selectableIds));
   }
 
   function clearSelection() {
@@ -128,15 +111,15 @@ export function FollowersManagerView() {
   function extract(targetUrl: string) {
     const trimmed = targetUrl.trim();
     if (!trimmed) {
-      setExploreStore({ error: "validation" });
+      setStarsStore({ error: "validation" });
       return;
     }
-    setExploreStore({ error: null });
+    setStarsStore({ error: null });
     setSelected(new Set());
     setConfirmOpen(false);
     startTransition(async () => {
       try {
-        const response = await fetch("/api/github/html-followers", {
+        const response = await fetch("/api/github/html-repos", {
           method: "POST",
           headers: {
             Accept: "application/json",
@@ -144,7 +127,7 @@ export function FollowersManagerView() {
           },
           body: JSON.stringify({ url: trimmed }),
         });
-        const body = (await response.json()) as HtmlFollowersPayload & {
+        const body = (await response.json()) as HtmlReposPayload & {
           error?: string;
         };
         if (response.status === 401) {
@@ -152,24 +135,24 @@ export function FollowersManagerView() {
           return;
         }
         if (!response.ok) {
-          setExploreStore({
+          setStarsStore({
             payload: null,
-            users: [],
+            repositories: [],
             error: body.error ?? "failed",
           });
           return;
         }
-        setExploreStore({
+        setStarsStore({
           payload: body,
-          users: withLocalFollowing(
-            Array.isArray(body.users) ? body.users : [],
-          ),
+          repositories: Array.isArray(body.repositories)
+            ? body.repositories
+            : [],
           url: body.sourceUrl ?? trimmed,
           error: null,
         });
         setSelected(new Set());
       } catch {
-        setExploreStore({ error: "network" });
+        setStarsStore({ error: "network" });
       }
     });
   }
@@ -179,43 +162,30 @@ export function FollowersManagerView() {
       return;
     }
     const target = url;
-    // Keep pendingExtract true until the timer fires so React Strict Mode
-    // remounts still retry instead of leaving the URL without an extract.
     const timer = window.setTimeout(() => {
-      setExploreStore({ pendingExtract: false });
+      setStarsStore({ pendingExtract: false });
       extract(target);
     }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot queue from Followers
   }, [pendingExtract, url]);
 
-  async function followOne(username: string) {
+  async function starOne(fullName: string) {
     if (progressOpen || rowPending) return;
-    setRowPending(username);
+    setRowPending(fullName);
     try {
-      await followOneUsername(username);
-      updateExploreUsers((current) =>
-        (Array.isArray(current) ? current : []).map((u) =>
-          u.username === username ? { ...u, isFollowing: true } : u,
+      await starOneRepo(fullName);
+      updateStarsRepos((current) =>
+        current.map((r) =>
+          r.fullName === fullName ? { ...r, isStarred: true } : r,
         ),
       );
       setSelected((current) => {
         const next = new Set(current);
-        next.delete(username);
+        next.delete(fullName);
         return next;
       });
-      const found = list.find((u) => u.username === username);
-      addFollowing([
-        {
-          login: username,
-          id: 0,
-          avatarUrl: found?.avatar ?? "",
-          htmlUrl: `https://github.com/${username}`,
-          name: found?.name ?? null,
-          status: "not_following_back",
-        },
-      ]);
-      toast.success(t("toastFollowed", { login: username }));
+      toast.success(t("toastStarred", { fullName }));
     } catch (err) {
       const code =
         err && typeof err === "object" && "code" in err
@@ -231,8 +201,34 @@ export function FollowersManagerView() {
     }
   }
 
-  async function runQueue(usernames: string[]) {
-    if (usernames.length === 0) return;
+  async function unstarOne(fullName: string) {
+    if (progressOpen || rowPending) return;
+    setRowPending(fullName);
+    try {
+      await unstarOneRepo(fullName);
+      updateStarsRepos((current) =>
+        current.map((r) =>
+          r.fullName === fullName ? { ...r, isStarred: false } : r,
+        ),
+      );
+      toast.success(t("toastUnstarred", { fullName }));
+    } catch (err) {
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code: string }).code)
+          : "failed";
+      if (code === "unauthorized") {
+        router.replace("/login?error=session_expired");
+        return;
+      }
+      toast.error(t(API_ERROR_KEYS[code] ?? "errorFailed"));
+    } finally {
+      setRowPending(null);
+    }
+  }
+
+  async function runQueue(fullNames: string[]) {
+    if (fullNames.length === 0) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -241,14 +237,14 @@ export function FollowersManagerView() {
     runIdRef.current = nextRunId;
     setRunId(nextRunId);
 
-    setQueue(usernames);
-    setProgress(emptyBulkProgress(usernames.length));
+    setQueue(fullNames);
+    setProgress(emptyBulkProgress(fullNames.length));
     setResult(null);
     setCancelling(false);
     setProgressOpen(true);
 
-    const bulk = await followManySequential(
-      usernames,
+    const bulk = await starManySequential(
+      fullNames,
       (next) => {
         if (runIdRef.current === nextRunId) {
           setProgress(next);
@@ -259,23 +255,10 @@ export function FollowersManagerView() {
 
     if (bulk.succeeded.length > 0) {
       const ok = new Set(bulk.succeeded);
-      updateExploreUsers((current) =>
-        (Array.isArray(current) ? current : []).map((u) =>
-          ok.has(u.username) ? { ...u, isFollowing: true } : u,
+      updateStarsRepos((current) =>
+        current.map((r) =>
+          ok.has(r.fullName) ? { ...r, isStarred: true } : r,
         ),
-      );
-      addFollowing(
-        bulk.succeeded.map((login) => {
-          const found = list.find((u) => u.username === login);
-          return {
-            login,
-            id: 0,
-            avatarUrl: found?.avatar ?? "",
-            htmlUrl: `https://github.com/${login}`,
-            name: found?.name ?? null,
-            status: "not_following_back" as const,
-          };
-        }),
       );
     }
 
@@ -299,7 +282,7 @@ export function FollowersManagerView() {
     if (bulk.abortReason === "cancelled") {
       if (bulk.succeeded.length > 0) {
         toast.message(
-          t("toastFollowStopped", {
+          t("toastStarStopped", {
             ok: bulk.succeeded.length,
             skipped: bulk.aborted.length,
           }),
@@ -314,10 +297,10 @@ export function FollowersManagerView() {
       toast.error(t(API_ERROR_KEYS.rate_limited));
     } else if (bulk.failed.length === 0 && bulk.aborted.length === 0) {
       toast.success(
-        t("toastFollowedMany", {
+        t("toastStarredMany", {
           count: bulk.succeeded.length,
-          accounts:
-            bulk.succeeded.length === 1 ? t("accountOne") : t("accountMany"),
+          repos:
+            bulk.succeeded.length === 1 ? t("repoOne") : t("repoMany"),
         }),
       );
     }
@@ -335,8 +318,8 @@ export function FollowersManagerView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
-        title={t("managerTitle")}
-        description={t("managerHint")}
+        title={t("starsTitle")}
+        description={t("starsHint")}
         backHref="/"
       />
 
@@ -348,17 +331,17 @@ export function FollowersManagerView() {
         }}
       >
         <label
-          htmlFor="manager-url"
+          htmlFor="stars-url"
           className="block text-xs text-muted-foreground"
         >
-          {t("managerUrlLabel")}
+          {t("starsUrlLabel")}
         </label>
         <div className="flex gap-2">
           <input
-            id="manager-url"
+            id="stars-url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder={t("managerUrlPlaceholder")}
+            placeholder={t("starsUrlPlaceholder")}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -369,7 +352,7 @@ export function FollowersManagerView() {
             disabled={pending || progressOpen}
             className="rounded-sm"
           >
-            {pending ? t("managerExtracting") : t("managerExtract")}
+            {pending ? t("starsExtracting") : t("starsExtract")}
           </Button>
         </div>
       </form>
@@ -381,43 +364,40 @@ export function FollowersManagerView() {
         {error ? (
           <EmptyState
             title={t(API_ERROR_KEYS[error] ?? "errorFailed")}
-            description={t("managerErrorBody")}
+            description={t("starsErrorBody")}
           />
         ) : null}
 
         {!payload && !error && !pending ? (
           <p className="text-sm leading-6 text-muted-foreground">
-            {t("managerEmpty")}
+            {t("starsEmpty")}
           </p>
         ) : null}
 
         {pending && !payload ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <LoaderCircle className="size-4 animate-spin" />
-            {t("managerExtracting")}
+            {t("starsExtracting")}
           </div>
         ) : null}
 
         {payload ? (
           <div className="space-y-6">
             <dl className="divide-y divide-border border-y text-sm">
+              <Stat label={t("starsTotal")} value={formatCount(list.length)} />
               <Stat
-                label={t("managerTotal")}
-                value={formatCount(list.length)}
+                label={t("starsStarred")}
+                value={formatCount(starredCount)}
               />
               <Stat
-                label={t("managerFollowing")}
-                value={formatCount(followingCount)}
-              />
-              <Stat
-                label={t("managerNotFollowing")}
-                value={formatCount(notFollowingCount)}
+                label={t("starsNotStarred")}
+                value={formatCount(notStarredCount)}
               />
             </dl>
 
-            {payload.maybeUnpersonalized && followingCount === 0 ? (
+            {payload.maybeUnpersonalized && starredCount === 0 ? (
               <p className="text-xs leading-5 text-muted-foreground">
-                {t("managerUnpersonalizedNote")}
+                {t("starsUnpersonalizedNote")}
               </p>
             ) : null}
 
@@ -428,17 +408,15 @@ export function FollowersManagerView() {
                   type="button"
                   variant="outline"
                   className="rounded-sm"
-                  disabled={
-                    progressOpen || pending || notFollowingCount === 0
-                  }
+                  disabled={progressOpen || pending || notStarredCount === 0}
                   onClick={() => selectFirst(size)}
                 >
-                  {t("managerFollowN", { count: size })}
+                  {t("starsStarN", { count: size })}
                 </Button>
               ))}
             </div>
 
-            {notFollowingCount > 0 ? (
+            {notStarredCount > 0 ? (
               <div className="flex items-center justify-between text-sm">
                 <button
                   type="button"
@@ -447,7 +425,7 @@ export function FollowersManagerView() {
                   onClick={
                     allSelectableSelected
                       ? clearSelection
-                      : selectAllNotFollowing
+                      : selectAllNotStarred
                   }
                 >
                   <span className="inline-flex items-center gap-1.5">
@@ -465,111 +443,18 @@ export function FollowersManagerView() {
             ) : null}
 
             <ul className="divide-y divide-border border-y">
-              {list.map((user) => {
-                const isSelected = selected.has(user.username);
-                return (
-                  <li
-                    key={user.username}
-                    className={cn(
-                      "flex items-center gap-3 py-3",
-                      isSelected && "bg-muted/50",
-                    )}
-                  >
-                    {!user.isFollowing ? (
-                      <Checkbox
-                        checked={isSelected}
-                        disabled={progressOpen}
-                        onCheckedChange={(value) =>
-                          toggle(user.username, Boolean(value))
-                        }
-                        aria-label={`${t("selectAll")} @${user.username}`}
-                      />
-                    ) : (
-                      <span className="size-4 shrink-0" aria-hidden="true" />
-                    )}
-                    <Avatar className="size-10">
-                      {user.avatar ? (
-                        <AvatarImage src={user.avatar} alt="" />
-                      ) : null}
-                      <AvatarFallback>
-                        {user.username.slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <a
-                        href={user.profileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="truncate text-sm font-medium hover:underline"
-                      >
-                        {user.username}
-                      </a>
-                      {user.name ? (
-                        <p className="truncate text-xs text-muted-foreground">
-                          {user.name}
-                        </p>
-                      ) : null}
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {user.isFollowing
-                          ? t("managerStatusFollowing")
-                          : t("managerStatusNotFollowing")}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 rounded-sm px-2"
-                        disabled={progressOpen || pending}
-                        aria-label={`${t("exploreUser")} @${user.username}`}
-                        onClick={() => {
-                          queueExploreExtract(user.username);
-                        }}
-                      >
-                        <Compass className="size-3.5" aria-hidden="true" />
-                        {t("exploreUser")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 rounded-sm px-2"
-                        disabled={progressOpen || pending}
-                        aria-label={`${t("starsUser")} @${user.username}`}
-                        onClick={() => {
-                          queueStarsExtract(user.username);
-                          router.push("/stars");
-                        }}
-                      >
-                        <Star className="size-3.5" aria-hidden="true" />
-                      </Button>
-                      {!user.isFollowing ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="rounded-sm"
-                          disabled={
-                            progressOpen || rowPending === user.username
-                          }
-                          onClick={() => void followOne(user.username)}
-                        >
-                          {rowPending === user.username ? (
-                            <LoaderCircle className="size-3.5 animate-spin" />
-                          ) : (
-                            <UserPlus className="size-3.5" />
-                          )}
-                          {t("follow")}
-                        </Button>
-                      ) : (
-                        <span className="shrink-0 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                          {t("managerFollowedLabel")}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
+              {list.map((repo) => (
+                <RepoRow
+                  key={repo.fullName}
+                  repo={repo}
+                  selected={selected.has(repo.fullName)}
+                  pending={rowPending === repo.fullName}
+                  disabled={progressOpen}
+                  onToggle={(value) => toggle(repo.fullName, value)}
+                  onStar={() => void starOne(repo.fullName)}
+                  onUnstar={() => void unstarOne(repo.fullName)}
+                />
+              ))}
             </ul>
 
             {payload.page > 1 || payload.hasNextPage ? (
@@ -581,7 +466,7 @@ export function FollowersManagerView() {
                     className="flex-1 rounded-sm"
                     disabled={pending || progressOpen}
                     onClick={() => {
-                      const prev = buildFollowersPageUrl(
+                      const prev = buildReposPageUrl(
                         payload.login,
                         payload.page - 1,
                       );
@@ -589,7 +474,7 @@ export function FollowersManagerView() {
                       extract(prev);
                     }}
                   >
-                    {t("managerPrevPage")}
+                    {t("starsPrevPage")}
                   </Button>
                 ) : null}
                 {payload.hasNextPage ? (
@@ -599,7 +484,7 @@ export function FollowersManagerView() {
                     className="flex-1 rounded-sm"
                     disabled={pending || progressOpen}
                     onClick={() => {
-                      const next = buildFollowersPageUrl(
+                      const next = buildReposPageUrl(
                         payload.login,
                         payload.page + 1,
                       );
@@ -607,7 +492,7 @@ export function FollowersManagerView() {
                       extract(next);
                     }}
                   >
-                    {t("managerNextPage")}
+                    {t("starsNextPage")}
                   </Button>
                 ) : null}
               </div>
@@ -619,21 +504,19 @@ export function FollowersManagerView() {
       <SelectionBar
         count={selected.size}
         onClear={clearSelection}
-        primaryLabel={t("followSelected")}
+        primaryLabel={t("starSelected")}
         primaryVariant="default"
         onPrimary={() => {
-          const targets = notFollowing
-            .map((u) => u.username)
-            .filter((username) => selected.has(username));
-          if (targets.length === 0) {
-            return;
-          }
+          const targets = notStarred
+            .map((r) => r.fullName)
+            .filter((id) => selected.has(id));
+          if (targets.length === 0) return;
           setConfirmTargets(targets);
           setConfirmOpen(true);
         }}
       />
 
-      <FollowConfirmDialog
+      <StarConfirmDialog
         open={confirmOpen}
         count={confirmTargets.length}
         onOpenChange={setConfirmOpen}
@@ -647,7 +530,7 @@ export function FollowersManagerView() {
         result={result}
         cancelling={cancelling}
         concurrency={1}
-        action="follow"
+        action="star"
         onStop={stopQueue}
         onClose={() => {
           setProgressOpen(false);
@@ -658,6 +541,125 @@ export function FollowersManagerView() {
         }
       />
     </div>
+  );
+}
+
+function RepoRow({
+  repo,
+  selected,
+  pending,
+  disabled,
+  onToggle,
+  onStar,
+  onUnstar,
+}: {
+  repo: HtmlRepo;
+  selected: boolean;
+  pending: boolean;
+  disabled: boolean;
+  onToggle: (value: boolean) => void;
+  onStar: () => void;
+  onUnstar: () => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <li
+      className={cn(
+        "flex items-start gap-3 py-3",
+        selected && "bg-muted/50",
+      )}
+    >
+      {!repo.isStarred ? (
+        <Checkbox
+          className="mt-1"
+          checked={selected}
+          disabled={disabled}
+          onCheckedChange={(value) => onToggle(Boolean(value))}
+          aria-label={`${t("selectAll")} ${repo.fullName}`}
+        />
+      ) : (
+        <span className="mt-1 size-4 shrink-0" aria-hidden="true" />
+      )}
+
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 text-sm font-medium">
+          <Star
+            className={cn(
+              "size-3.5 shrink-0",
+              repo.isStarred
+                ? "fill-amber-400 text-amber-400"
+                : "text-muted-foreground",
+            )}
+            aria-hidden="true"
+          />
+          <span className="truncate">{repo.name}</span>
+        </p>
+        <p className="truncate text-xs text-muted-foreground">{repo.fullName}</p>
+        {repo.description ? (
+          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+            {repo.description}
+          </p>
+        ) : null}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {formatCount(repo.stars)} stars
+          <span className="mx-1.5">·</span>
+          {repo.isStarred
+            ? t("starsStatusStarred")
+            : t("starsStatusNotStarred")}
+        </p>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        {repo.isStarred ? (
+          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            {t("starsStatusStarred")}
+          </span>
+        ) : null}
+        <div className="flex gap-1.5">
+          {repo.isStarred ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-sm"
+              disabled={disabled || pending}
+              onClick={onUnstar}
+            >
+              {pending ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : null}
+              {t("starsUnstar")}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-sm"
+              disabled={disabled || pending}
+              onClick={onStar}
+            >
+              {pending ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                <Star className="size-3.5" />
+              )}
+              {t("starsStar")}
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="rounded-sm"
+            onClick={() => window.open(repo.url, "_blank", "noopener,noreferrer")}
+          >
+            <ExternalLink className="size-3.5" aria-hidden="true" />
+            {t("starsExploreRepo")}
+          </Button>
+        </div>
+      </div>
+    </li>
   );
 }
 

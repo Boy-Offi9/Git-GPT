@@ -12,10 +12,12 @@ type UserListProps = {
   onUnfollow?: (login: string) => void;
   onFollow?: (user: RelatedUser) => void;
   onExplore?: (login: string) => void;
+  onStars?: (login: string) => void;
   pendingUsername?: string | null;
   selectable?: boolean;
   showFollowAction?: boolean;
   showExploreAction?: boolean;
+  showStarsAction?: boolean;
 };
 
 export function UserList({
@@ -25,10 +27,12 @@ export function UserList({
   onUnfollow,
   onFollow,
   onExplore,
+  onStars,
   pendingUsername,
   selectable = false,
   showFollowAction = false,
   showExploreAction = false,
+  showStarsAction = false,
 }: UserListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line react-hooks/incompatible-library -- virtualizer is required for large GitHub graphs
@@ -65,11 +69,13 @@ export function UserList({
                 selectable={selectable}
                 showFollowAction={showFollowAction}
                 showExploreAction={showExploreAction}
+                showStarsAction={showStarsAction}
                 selected={selected?.has(user.login)}
                 onSelectedChange={(value) => onToggle?.(user.login, value)}
                 onUnfollow={() => onUnfollow?.(user.login)}
                 onFollow={() => onFollow?.(user)}
                 onExplore={() => onExplore?.(user.login)}
+                onStars={() => onStars?.(user.login)}
                 pending={pendingUsername === user.login}
               />
             </li>

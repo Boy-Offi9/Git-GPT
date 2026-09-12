@@ -25,7 +25,7 @@ type BulkProgressDialogProps = {
   result: BulkUnfollowResult | null;
   cancelling?: boolean;
   concurrency?: number;
-  action?: "unfollow" | "follow";
+  action?: "unfollow" | "follow" | "star";
   onStop: () => void;
   onClose: () => void;
   onRetry: () => void;
@@ -57,14 +57,48 @@ export function BulkProgressDialog({
     progress.total === 0
       ? 0
       : Math.round((progress.sent / progress.total) * 100);
-  const isFollow = action === "follow";
+
+  const runningTitle =
+    action === "follow"
+      ? t("progressFollowTitle")
+      : action === "star"
+        ? t("progressStarTitle")
+        : t("progressTitle");
+  const summaryKey =
+    action === "follow"
+      ? "progressFollowSummary"
+      : action === "star"
+        ? "progressStarSummary"
+        : "progressSummary";
+  const workingKey =
+    action === "follow" || action === "star"
+      ? action === "star"
+        ? "progressStarWorking"
+        : "progressFollowWorking"
+      : "progressWorking";
+  const okLabel =
+    action === "follow"
+      ? t("progressFollowOk")
+      : action === "star"
+        ? t("progressStarOk")
+        : t("progressOk");
+  const stopTitle =
+    action === "follow"
+      ? t("progressFollowStopTitle")
+      : action === "star"
+        ? t("progressStarStopTitle")
+        : t("progressStopTitle");
+  const stopBody =
+    action === "follow"
+      ? t("progressFollowStopBody")
+      : action === "star"
+        ? t("progressStarStopBody")
+        : t("progressStopBody");
 
   const title = running
     ? cancelling
       ? t("progressStopping")
-      : isFollow
-        ? t("progressFollowTitle")
-        : t("progressTitle")
+      : runningTitle
     : result.abortReason === "rate_limited"
       ? t("progressRateLimit")
       : result.abortReason === "unauthorized"
@@ -74,7 +108,7 @@ export function BulkProgressDialog({
           : t("progressDone");
 
   const summary = result
-    ? t(isFollow ? "progressFollowSummary" : "progressSummary", {
+    ? t(summaryKey, {
         ok: formatCount(result.succeeded.length),
         failed:
           result.failed.length > 0
@@ -89,7 +123,7 @@ export function BulkProgressDialog({
               })
             : "",
       })
-    : t(isFollow ? "progressFollowWorking" : "progressWorking", {
+    : t(workingKey, {
         count: concurrency,
       });
 
@@ -131,9 +165,7 @@ export function BulkProgressDialog({
           >
             {formatCount(progress.succeeded)}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {isFollow ? t("progressFollowOk") : t("progressOk")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{okLabel}</p>
         </div>
 
         <dl className="divide-y divide-border border-y text-sm">
@@ -168,7 +200,11 @@ export function BulkProgressDialog({
                     key={index}
                     className="h-5 truncate leading-5 text-foreground"
                   >
-                    {login ? `@${login}` : "\u00A0"}
+                    {login
+                      ? action === "star"
+                        ? login
+                        : `@${login}`
+                      : "\u00A0"}
                   </li>
                 );
               })}
@@ -190,15 +226,9 @@ export function BulkProgressDialog({
 
         {confirmStop && running ? (
           <div className="border-l-2 border-foreground pl-3">
-            <p className="text-sm font-medium">
-              {isFollow
-                ? t("progressFollowStopTitle")
-                : t("progressStopTitle")}
-            </p>
+            <p className="text-sm font-medium">{stopTitle}</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {isFollow
-                ? t("progressFollowStopBody")
-                : t("progressStopBody")}
+              {stopBody}
             </p>
           </div>
         ) : null}

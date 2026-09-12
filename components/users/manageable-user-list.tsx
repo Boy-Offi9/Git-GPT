@@ -31,8 +31,10 @@ type ManageableUserListProps = {
   showUnfollowAll?: boolean;
   showFollowAction?: boolean;
   showExploreAction?: boolean;
+  showStarsAction?: boolean;
   unfollowAllCopy?: "everyone" | "nonFollowers";
   onExplore?: (login: string) => void;
+  onStars?: (login: string) => void;
 };
 
 export function ManageableUserList({
@@ -43,8 +45,10 @@ export function ManageableUserList({
   showUnfollowAll = false,
   showFollowAction = false,
   showExploreAction = false,
+  showStarsAction = false,
   unfollowAllCopy = "everyone",
   onExplore,
+  onStars,
 }: ManageableUserListProps) {
   const router = useRouter();
   const { t } = useI18n();
@@ -238,11 +242,13 @@ export function ManageableUserList({
           selectable={selectable}
           showFollowAction={showFollowAction}
           showExploreAction={showExploreAction}
+          showStarsAction={showStarsAction}
           selected={selected}
           onToggle={toggle}
           onUnfollow={(login) => void unfollowOne(login)}
           onFollow={(user) => void followOne(user)}
           onExplore={onExplore}
+          onStars={onStars}
           pendingUsername={pending}
         />
       )}

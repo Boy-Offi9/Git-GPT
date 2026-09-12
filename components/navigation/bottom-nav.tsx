@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleUser, Compass, House, UserCheck, Users } from "lucide-react";
+import {
+  CircleUser,
+  Compass,
+  House,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/i18n/i18n-provider";
 
@@ -19,16 +25,16 @@ export function BottomNav() {
       match: "path" as const,
     },
     {
-      href: "/manager",
-      label: t("navExplore"),
-      icon: Compass,
-      match: "manager" as const,
-    },
-    {
       href: "/followers",
       label: t("navFollowers"),
       icon: UserCheck,
       match: "path" as const,
+    },
+    {
+      href: "/manager",
+      label: t("navExplore"),
+      icon: Compass,
+      match: "manager" as const,
     },
     {
       href: "/profile",
@@ -59,7 +65,7 @@ export function BottomNav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex cursor-pointer flex-col items-center gap-1 px-1 py-2.5 text-[10px]",
+                  "flex cursor-pointer flex-col items-center gap-1 px-0.5 py-2.5 text-[10px]",
                   active ? "text-foreground" : "text-muted-foreground",
                 )}
               >

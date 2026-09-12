@@ -141,3 +141,26 @@ export type HtmlFollowersPayload = {
   /** True when no unfollow forms were found — HTML may not be personalized. */
   maybeUnpersonalized: boolean;
 };
+
+/** Repository extracted from github.com repositories HTML (not REST). */
+export type HtmlRepo = {
+  name: string;
+  fullName: string;
+  owner: string;
+  url: string;
+  stars: number;
+  description: string | null;
+  isStarred: boolean;
+};
+
+export type HtmlReposPayload = {
+  repositories: HtmlRepo[];
+  page: number;
+  hasNextPage: boolean;
+  sourceUrl: string;
+  login: string;
+  starredCount: number;
+  notStarredCount: number;
+  /** True when no unstar forms were found — HTML may not be personalized. */
+  maybeUnpersonalized: boolean;
+};

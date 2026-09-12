@@ -10,6 +10,7 @@ import { ManageableUserList } from "@/components/users/manageable-user-list";
 import { PageHeader } from "@/components/navigation/page-header";
 import { useI18n } from "@/components/i18n/i18n-provider";
 import { queueExploreExtract } from "@/components/manager/explore-session-store";
+import { queueStarsExtract } from "@/components/manager/stars-session-store";
 import type { RelatedUser } from "@/types/github";
 
 type FollowersFilter = "all" | "mutual" | "follows_you";
@@ -77,9 +78,14 @@ export function FollowersView() {
         selectable={false}
         showFollowAction
         showExploreAction
+        showStarsAction
         onExplore={(login) => {
           queueExploreExtract(login);
           router.push("/manager");
+        }}
+        onStars={(login) => {
+          queueStarsExtract(login);
+          router.push("/stars");
         }}
       />
     </div>

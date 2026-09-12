@@ -12,7 +12,7 @@ It compares your **Followers** and **Following** lists to find people you follow
 * 🚀 Unfollow multiple users at once
 * 🔐 GitHub OAuth authentication
 * 🛡️ No GitHub password required
-* 📦 No repository access required
+* 📦 Public repository starring via `public_repo` (no private repo contents)
 
 ## How It Works
 
@@ -23,7 +23,7 @@ It compares your **Followers** and **Following** lists to find people you follow
 5. Select the users you want to remove.
 6. Unfollow them directly through GitHub.
 
-The app uses GitHub's official REST API for follower/following data and follow management.
+The app uses GitHub's official REST API for follower/following data and follow/star management. Explore and Stars features also read public GitHub HTML for list extraction.
 
 ## Tech Stack
 
@@ -36,9 +36,9 @@ The app uses GitHub's official REST API for follower/following data and follow m
 
 ## Security
 
-Git-GPT uses GitHub OAuth instead of asking for your GitHub password. It doesn't require access to your repositories.
+Git-GPT uses GitHub OAuth instead of asking for your GitHub password.
 
-The application only requests the permissions needed for follow management. GitHub's `user:follow` scope allows an OAuth app to follow or unfollow users.
+The application requests `read:user`, `user:follow`, and `public_repo` so it can manage follows and star public repositories. It does not need access to private repository contents.
 
 ## Open Source
 

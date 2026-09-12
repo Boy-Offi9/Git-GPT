@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, LoaderCircle } from "lucide-react";
+import { Compass, LoaderCircle, Star } from "lucide-react";
 import type { RelatedUser } from "@/types/github";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,12 @@ type UserRowProps = {
   onUnfollow?: () => void;
   onFollow?: () => void;
   onExplore?: () => void;
+  onStars?: () => void;
   pending?: boolean;
   selectable?: boolean;
   showFollowAction?: boolean;
   showExploreAction?: boolean;
+  showStarsAction?: boolean;
 };
 
 export function UserRow({
@@ -29,10 +31,12 @@ export function UserRow({
   onUnfollow,
   onFollow,
   onExplore,
+  onStars,
   pending = false,
   selectable = false,
   showFollowAction = false,
   showExploreAction = false,
+  showStarsAction = false,
 }: UserRowProps) {
   const { t } = useI18n();
   const initials = (user.name ?? user.login).slice(0, 1).toUpperCase();
@@ -44,7 +48,7 @@ export function UserRow({
   return (
     <article
       className={cn(
-        "flex h-full items-center gap-3 border-b border-border",
+        "flex h-full items-center gap-2 border-b border-border sm:gap-3",
         selected && "bg-muted/50",
       )}
     >
@@ -90,6 +94,19 @@ export function UserRow({
         >
           <Compass className="size-3.5" aria-hidden="true" />
           {t("exploreUser")}
+        </Button>
+      ) : null}
+
+      {showStarsAction ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 shrink-0 rounded-sm px-2"
+          aria-label={`${t("starsUser")} @${user.login}`}
+          onClick={onStars}
+        >
+          <Star className="size-3.5" aria-hidden="true" />
         </Button>
       ) : null}
 
