@@ -2,6 +2,7 @@
 
 import type { SyncPayload } from "@/types/github";
 import { clearHomeIntro } from "@/lib/home-intro";
+import { clearExploreStore } from "@/components/manager/explore-session-store";
 
 type GithubStore = {
   data: SyncPayload | null;
@@ -149,6 +150,7 @@ export function updateGithubStoreData(
 
 export function clearGithubStore() {
   clearHomeIntro();
+  clearExploreStore();
   inflight = null;
   assign({
     data: null,

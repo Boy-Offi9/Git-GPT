@@ -5,11 +5,19 @@ import { useI18n } from "@/components/i18n/i18n-provider";
 
 type SelectionBarProps = {
   count: number;
-  onUnfollow: () => void;
   onClear: () => void;
+  onPrimary: () => void;
+  primaryLabel: string;
+  primaryVariant?: "default" | "destructive";
 };
 
-export function SelectionBar({ count, onUnfollow, onClear }: SelectionBarProps) {
+export function SelectionBar({
+  count,
+  onClear,
+  onPrimary,
+  primaryLabel,
+  primaryVariant = "destructive",
+}: SelectionBarProps) {
   const { t } = useI18n();
   if (count === 0) {
     return null;
@@ -33,8 +41,12 @@ export function SelectionBar({ count, onUnfollow, onClear }: SelectionBarProps) 
             {t("clearSelection")}
           </button>
         </div>
-        <Button variant="destructive" className="rounded-sm" onClick={onUnfollow}>
-          {t("unfollowSelected")}
+        <Button
+          variant={primaryVariant}
+          className="rounded-sm"
+          onClick={onPrimary}
+        >
+          {primaryLabel}
         </Button>
       </div>
     </div>

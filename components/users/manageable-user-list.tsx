@@ -244,7 +244,9 @@ export function ManageableUserList({
       <SelectionBar
         count={selected.size}
         onClear={() => setSelected(new Set())}
-        onUnfollow={() => {
+        primaryLabel={t("unfollowSelected")}
+        primaryVariant="destructive"
+        onPrimary={() => {
           const targets = Array.from(selected);
           if (targets.length === 0) {
             return;

@@ -120,3 +120,24 @@ export type SyncPayload = {
   };
   syncedAt: number;
 };
+
+/** User extracted from github.com followers HTML (not REST). */
+export type HtmlFollower = {
+  username: string;
+  name: string | null;
+  avatar: string | null;
+  profileUrl: string;
+  isFollowing: boolean;
+};
+
+export type HtmlFollowersPayload = {
+  users: HtmlFollower[];
+  page: number;
+  hasNextPage: boolean;
+  sourceUrl: string;
+  login: string;
+  followingCount: number;
+  notFollowingCount: number;
+  /** True when no unfollow forms were found — HTML may not be personalized. */
+  maybeUnpersonalized: boolean;
+};

@@ -119,3 +119,25 @@ export async function unfollowMany(
     },
   );
 }
+
+/** Sequential follow queue for Followers Manager (one at a time + delay). */
+export async function followManySequential(
+  usernames: string[],
+  onProgress: (progress: BulkUnfollowProgress) => void,
+  signal?: AbortSignal,
+) {
+  return runBulkUnfollow(
+    usernames,
+    (username) => postAction("/api/github/follow", username),
+    {
+      concurrency: 1,
+      delayMs: 350,
+      onProgress,
+      signal,
+    },
+  );
+}
+
+export async function followOneUsername(username: string): Promise<void> {
+  await postAction("/api/github/follow", username);
+}

@@ -9,6 +9,8 @@ export type UnfollowFn = (username: string) => Promise<void>;
 
 export type BulkUnfollowOptions = {
   concurrency?: number;
+  /** Delay between starting successive mutations (ms). Applied after each finished request when concurrency is 1. */
+  delayMs?: number;
   signal?: AbortSignal;
   onProgress?: (progress: BulkUnfollowProgress) => void;
 };
@@ -30,12 +32,32 @@ function mapUnfollowError(error: unknown): UnfollowErrorCode {
   return "failed";
 }
 
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
 export async function runBulkUnfollow(
   usernames: string[],
   unfollow: UnfollowFn,
   options: BulkUnfollowOptions = {},
 ): Promise<BulkUnfollowResult> {
   const concurrency = Math.max(1, options.concurrency ?? 3);
+  const delayMs = Math.max(0, options.delayMs ?? 0);
   const result: BulkUnfollowResult = {
     succeeded: [],
     failed: [],
@@ -101,16 +123,38 @@ export async function runBulkUnfollow(
         await unfollow(username);
         result.succeeded.push(username);
       } catch (error) {
-        const code = mapUnfollowError(error);
-        if (code === "unauthorized" || code === "rate_limited") {
-          requestAbort(code);
-          result.failed.push({ username, error: code });
+        if (error instanceof DOMException && error.name === "AbortError") {
+          requestAbort("cancelled");
+          result.aborted.push(username);
         } else {
-          result.failed.push({ username, error: code });
+          const code = mapUnfollowError(error);
+          if (code === "unauthorized" || code === "rate_limited") {
+            requestAbort(code);
+            result.failed.push({ username, error: code });
+          } else {
+            result.failed.push({ username, error: code });
+          }
         }
       } finally {
         inFlight.delete(username);
         emit();
+      }
+
+      if (
+        !abort &&
+        delayMs > 0 &&
+        concurrency === 1 &&
+        index < usernames.length
+      ) {
+        try {
+          await sleep(delayMs, options.signal);
+        } catch {
+          requestAbort("cancelled");
+          for (let i = index; i < usernames.length; i += 1) {
+            result.aborted.push(usernames[i]);
+          }
+          return;
+        }
       }
     }
   }
@@ -128,7 +172,9 @@ export async function runBulkUnfollow(
   if (abort) {
     result.abortReason = abort;
     for (let i = index; i < usernames.length; i += 1) {
-      result.aborted.push(usernames[i]);
+      if (!result.aborted.includes(usernames[i]) && !result.succeeded.includes(usernames[i]) && !result.failed.some((f) => f.username === usernames[i])) {
+        result.aborted.push(usernames[i]);
+      }
     }
     emit();
   }
