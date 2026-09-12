@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
+import { Compass, LoaderCircle } from "lucide-react";
 import type { RelatedUser } from "@/types/github";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,11 @@ type UserRowProps = {
   onSelectedChange?: (selected: boolean) => void;
   onUnfollow?: () => void;
   onFollow?: () => void;
+  onExplore?: () => void;
   pending?: boolean;
   selectable?: boolean;
   showFollowAction?: boolean;
+  showExploreAction?: boolean;
 };
 
 export function UserRow({
@@ -26,9 +28,11 @@ export function UserRow({
   onSelectedChange,
   onUnfollow,
   onFollow,
+  onExplore,
   pending = false,
   selectable = false,
   showFollowAction = false,
+  showExploreAction = false,
 }: UserRowProps) {
   const { t } = useI18n();
   const initials = (user.name ?? user.login).slice(0, 1).toUpperCase();
@@ -74,6 +78,20 @@ export function UserRow({
           </span>
         </span>
       </a>
+
+      {showExploreAction ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 shrink-0 gap-1 rounded-sm px-2"
+          aria-label={`${t("exploreUser")} @${user.login}`}
+          onClick={onExplore}
+        >
+          <Compass className="size-3.5" aria-hidden="true" />
+          {t("exploreUser")}
+        </Button>
+      ) : null}
 
       {canFollow ? (
         <FollowActionButton

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useGithubData } from "@/components/app/github-data-provider";
 import { ErrorState } from "@/components/feedback/error-state";
 import { FollowersSkeleton } from "@/components/feedback/skeletons";
@@ -8,12 +9,14 @@ import { FilterPills } from "@/components/users/filter-pills";
 import { ManageableUserList } from "@/components/users/manageable-user-list";
 import { PageHeader } from "@/components/navigation/page-header";
 import { useI18n } from "@/components/i18n/i18n-provider";
+import { queueExploreExtract } from "@/components/manager/explore-session-store";
 import type { RelatedUser } from "@/types/github";
 
 type FollowersFilter = "all" | "mutual" | "follows_you";
 
 export function FollowersView() {
   const { t } = useI18n();
+  const router = useRouter();
   const { data, loading, error, refresh } = useGithubData();
   const [filter, setFilter] = useState<FollowersFilter>("all");
 
@@ -73,6 +76,11 @@ export function FollowersView() {
         emptyDescription={empty.body}
         selectable={false}
         showFollowAction
+        showExploreAction
+        onExplore={(login) => {
+          queueExploreExtract(login);
+          router.push("/manager");
+        }}
       />
     </div>
   );

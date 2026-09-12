@@ -5,6 +5,7 @@ export const en = {
   navFollowers: "Followers",
   navProfile: "Profile",
   navExplore: "Explore",
+  exploreUser: "Explore",
   back: "Back",
   search: "Search people…",
   clearSearch: "Clear search",

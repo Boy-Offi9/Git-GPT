@@ -7,6 +7,7 @@ export type ExploreStore = {
   payload: HtmlFollowersPayload | null;
   users: HtmlFollower[];
   error: string | null;
+  pendingExtract: boolean;
 };
 
 const listeners = new Set<() => void>();
@@ -16,6 +17,7 @@ let store: ExploreStore = {
   payload: null,
   users: [],
   error: null,
+  pendingExtract: false,
 };
 
 const serverSnapshot: ExploreStore = {
@@ -23,6 +25,7 @@ const serverSnapshot: ExploreStore = {
   payload: null,
   users: [],
   error: null,
+  pendingExtract: false,
 };
 
 function emit() {
@@ -61,11 +64,23 @@ export function updateExploreUsers(
   assign({ ...store, users: updater(store.users) });
 }
 
+export function queueExploreExtract(login: string) {
+  const trimmed = login.trim().replace(/^@/, "");
+  assign({
+    url: `https://github.com/${trimmed}`,
+    payload: null,
+    users: [],
+    error: null,
+    pendingExtract: true,
+  });
+}
+
 export function clearExploreStore() {
   assign({
     url: "",
     payload: null,
     users: [],
     error: null,
+    pendingExtract: false,
   });
 }

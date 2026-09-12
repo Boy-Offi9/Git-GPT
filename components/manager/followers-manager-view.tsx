@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { CheckSquare, LoaderCircle, Square, UserPlus } from "lucide-react";
@@ -48,7 +48,7 @@ export function FollowersManagerView() {
     getExploreStore,
     getExploreStoreServerSnapshot,
   );
-  const { url, payload, users, error } = explore;
+  const { url, payload, users, error, pendingExtract } = explore;
   const [pending, startTransition] = useTransition();
   const [rowPending, setRowPending] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -171,6 +171,21 @@ export function FollowersManagerView() {
       }
     });
   }
+
+  useEffect(() => {
+    if (!pendingExtract || !url.trim()) {
+      return;
+    }
+    const target = url;
+    // Keep pendingExtract true until the timer fires so React Strict Mode
+    // remounts still retry instead of leaving the URL without an extract.
+    const timer = window.setTimeout(() => {
+      setExploreStore({ pendingExtract: false });
+      extract(target);
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot queue from Followers
+  }, [pendingExtract, url]);
 
   async function followOne(username: string) {
     if (progressOpen || rowPending) return;
