@@ -48,13 +48,5 @@ export async function clearOAuthPending(): Promise<void> {
   store.set(OAUTH_COOKIE, "", expiredCookieOptions());
 }
 
-export function isAccessTokenFresh(
-  session: SessionPayload,
-  skewMs = 60_000,
-  now = Date.now(),
-): boolean {
-  if (!session.accessTokenExpiresAt) {
-    return true;
-  }
-  return session.accessTokenExpiresAt - skewMs > now;
-}
+export { isAccessTokenFresh } from "@/lib/auth/access-token";
+

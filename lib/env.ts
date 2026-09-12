@@ -52,3 +52,11 @@ export function isSecureCookie(): boolean {
   }
   return process.env.NODE_ENV === "production";
 }
+
+export function getDatabaseUrl(): string {
+  return required("DATABASE_URL", process.env.DATABASE_URL);
+}
+
+export function tryGetDatabaseUrl(): string | null {
+  return process.env.DATABASE_URL?.trim() || null;
+}

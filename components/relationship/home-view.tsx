@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LoaderCircle, WandSparkles } from "lucide-react";
+import {
+  Bot,
+  ChevronRight,
+  Compass,
+  LoaderCircle,
+  Star,
+  WandSparkles,
+} from "lucide-react";
 import {
   notFollowingBack,
   useGithubData,
@@ -85,6 +92,30 @@ function HomeReady({
     { label: t("homeMutual"), value: mutualCount.value },
   ];
 
+  const tools = [
+    {
+      href: "/manager",
+      icon: Compass,
+      title: t("homeToolExplore"),
+      hint: t("homeToolExploreHint"),
+      vip: false,
+    },
+    {
+      href: "/stars",
+      icon: Star,
+      title: t("homeToolStars"),
+      hint: t("homeToolStarsHint"),
+      vip: false,
+    },
+    {
+      href: "/crawler",
+      icon: Bot,
+      title: t("homeToolCrawler"),
+      hint: t("homeToolCrawlerHint"),
+      vip: true,
+    },
+  ] as const;
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto pb-4">
       <header className="flex items-center gap-3.5">
@@ -165,6 +196,49 @@ function HomeReady({
           )
         ) : null}
       </div>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-foreground">
+          {t("homeToolsTitle")}
+        </h2>
+        <ul className="mt-3 divide-y divide-border border-y border-border">
+          {tools.map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <li key={tool.href}>
+                <Link
+                  href={tool.href}
+                  className="flex items-center gap-3 py-3.5 transition-colors hover:bg-muted/30"
+                >
+                  <Icon
+                    className="size-5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        {tool.title}
+                      </span>
+                      {tool.vip ? (
+                        <span className="shrink-0 border border-mark/40 bg-mark/10 px-1.5 py-px text-[10px] font-semibold tracking-wide text-mark">
+                          {t("homeToolVip")}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {tool.hint}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </div>
   );
 }

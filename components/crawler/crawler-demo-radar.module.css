@@ -1,0 +1,519 @@
+/* Radar demo only — do not share with other demos. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, #1a3d32 0%, transparent 55%),
+    radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(45, 212, 191, 0.1), transparent 35%),
+    #0a100e;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(52, 211, 153, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 211, 153, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 72%);
+  animation: radarGridDrift 28s linear infinite;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+}
+
+.radar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: min(58%, 15.5rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.radarRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(52, 211, 153, 0.22);
+}
+
+.radarRing2 {
+  inset: 18%;
+  border-color: rgba(52, 211, 153, 0.18);
+}
+
+.radarRing3 {
+  inset: 36%;
+  border-color: rgba(52, 211, 153, 0.14);
+}
+
+.radarCrossH,
+.radarCrossV {
+  position: absolute;
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.radarCrossH {
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.radarCrossV {
+  left: 50%;
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.radarSweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(52, 211, 153, 0.38) 0deg,
+    rgba(52, 211, 153, 0.12) 28deg,
+    transparent 55deg,
+    transparent 360deg
+  );
+  animation: radarSpin 5.5s linear infinite;
+  mask-image: radial-gradient(circle, black 62%, transparent 72%);
+}
+
+.radarSweepEdge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 2px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    rgba(167, 243, 208, 0.95),
+    rgba(52, 211, 153, 0.15)
+  );
+  box-shadow: 0 0 10px rgba(110, 231, 183, 0.65);
+  animation: radarSpin 5.5s linear infinite;
+}
+
+.runtimeSolo {
+  margin: 0;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: #6ee7b7;
+}
+
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.orbitA {
+  width: 42%;
+  aspect-ratio: 1;
+  animation: radarOrbitSpin 22s linear infinite;
+  border-style: dashed;
+}
+
+.orbitB {
+  width: 68%;
+  aspect-ratio: 1;
+  animation: radarOrbitSpin 34s linear infinite reverse;
+  opacity: 0.7;
+}
+
+.orbitDot {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6ee7b7;
+  box-shadow: 0 0 12px #34d399;
+  transform: translate(-50%, -50%);
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.link {
+  fill: none;
+  stroke: rgba(52, 211, 153, 0.35);
+  stroke-width: 0.4;
+  animation: radarLinkPulse 3.2s ease-in-out infinite;
+}
+
+.packet {
+  fill: #a7f3d0;
+  filter: drop-shadow(0 0 3px #34d399);
+  offset-rotate: 0deg;
+  animation: radarPacket 3.6s linear infinite;
+}
+
+.packetBack {
+  fill: #5eead4;
+  animation-direction: reverse;
+  animation-duration: 4.6s;
+}
+
+.node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  transform: translate(-50%, -50%);
+  animation: radarNodeBob 4s ease-in-out infinite;
+}
+
+.nodeIcon {
+  position: relative;
+  display: flex;
+  width: 2.6rem;
+  height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(110, 231, 183, 0.35);
+  background: rgba(6, 40, 30, 0.88);
+  color: #6ee7b7;
+  box-shadow:
+    0 0 22px -4px rgba(52, 211, 153, 0.85),
+    inset 0 0 12px rgba(16, 185, 129, 0.12);
+}
+
+.nodeBars {
+  position: absolute;
+  bottom: 3px;
+  left: 4px;
+  right: 4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 8px;
+}
+
+.nodeBar {
+  flex: 1;
+  border-radius: 1px;
+  background: #34d399;
+  opacity: 0.85;
+  animation: radarBar 2s ease-in-out infinite;
+}
+
+.nodeLabel {
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.1rem 0.4rem;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: rgba(167, 243, 208, 0.85);
+}
+
+.core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  width: 4.75rem;
+  height: 4.75rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(167, 243, 208, 0.45);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(110, 231, 183, 0.35), transparent 50%),
+    rgba(16, 185, 129, 0.18);
+  color: #ecfdf5;
+  box-shadow:
+    0 0 40px rgba(16, 185, 129, 0.4),
+    inset 0 0 20px rgba(52, 211, 153, 0.2);
+  animation: radarCorePulse 3.6s ease-in-out infinite;
+}
+
+.coreLive {
+  margin-top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.85);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  border-top: 1px solid rgba(52, 211, 153, 0.14);
+  padding: 0.75rem 1rem 1rem;
+  background: linear-gradient(180deg, #0e1613 0%, #0b100e 100%);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.stat {
+  min-width: 0;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(52, 211, 153, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 0.3rem 0.4rem;
+}
+
+.statLabel {
+  margin: 0;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.45);
+}
+
+.statValue {
+  margin: 0.1rem 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(236, 253, 245, 0.92);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.statusLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pingWrap {
+  position: relative;
+  display: flex;
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.pingOuter {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #34d399;
+  opacity: 0.55;
+  animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.pingInner {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #34d399;
+}
+
+.statusText {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(236, 253, 245, 0.92);
+}
+
+.logStream {
+  position: relative;
+  height: 3.6rem;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(52, 211, 153, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 0.45rem 0.6rem;
+}
+
+.logLine {
+  margin: 0;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: rgba(167, 243, 208, 0.88);
+  animation: radarLogIn 0.45s ease-out;
+}
+
+.logMuted {
+  color: rgba(167, 243, 208, 0.4);
+  transform: scale(0.98);
+  transform-origin: left center;
+}
+
+@keyframes radarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radarGridDrift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 24px 24px;
+  }
+}
+
+@keyframes radarOrbitSpin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes radarLinkPulse {
+  0%,
+  100% {
+    stroke-opacity: 0.2;
+  }
+  50% {
+    stroke-opacity: 0.65;
+  }
+}
+
+@keyframes radarPacket {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes radarNodeBob {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    filter: brightness(1.3);
+    transform: translate(-50%, -50%) translateY(-2px);
+  }
+}
+
+@keyframes radarBar {
+  0%,
+  100% {
+    height: 25%;
+  }
+  50% {
+    height: 95%;
+  }
+}
+
+@keyframes radarCorePulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 36px rgba(16, 185, 129, 0.35),
+      inset 0 0 18px rgba(52, 211, 153, 0.18);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.07);
+    box-shadow:
+      0 0 60px rgba(16, 185, 129, 0.55),
+      inset 0 0 28px rgba(52, 211, 153, 0.28);
+  }
+}
+
+@keyframes radarPing {
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes radarLogIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid,
+  .orbitA,
+  .orbitB,
+  .link,
+  .packet,
+  .node,
+  .nodeBar,
+  .core,
+  .pingOuter,
+  .logLine,
+  .radarSweep,
+  .radarSweepEdge {
+    animation: none !important;
+  }
+}

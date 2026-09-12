@@ -1,0 +1,16 @@
+Dockerfile
+.dockerignore
+.git
+.gitignore
+*.md
+.env*
+!.env.example
+githubcheck.zip
+githubcheck2.zip
+githubcheck3.zip
+node_modules
+.next
+.next-build
+coverage
+drizzle
+*.log

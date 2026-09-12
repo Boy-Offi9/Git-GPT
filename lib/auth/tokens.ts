@@ -1,13 +1,10 @@
 import type { SessionPayload } from "@/types/auth";
 import { refreshAccessToken, tokensFromResponse } from "@/lib/auth/oauth";
-import { isAccessTokenFresh, setSession } from "@/lib/auth/session";
+import { isAccessTokenFresh } from "@/lib/auth/access-token";
+import { setSession } from "@/lib/auth/session";
+import { ReauthRequiredError } from "@/lib/auth/reauth-error";
 
-export class ReauthRequiredError extends Error {
-  constructor() {
-    super("reauth_required");
-    this.name = "ReauthRequiredError";
-  }
-}
+export { ReauthRequiredError };
 
 export async function getValidAccessToken(
   session: SessionPayload,
@@ -58,3 +55,4 @@ export async function refreshSession(
     throw new ReauthRequiredError();
   }
 }
+

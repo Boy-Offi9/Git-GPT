@@ -13,6 +13,7 @@ It compares your **Followers** and **Following** lists to find people you follow
 * 🔐 GitHub OAuth authentication
 * 🛡️ No GitHub password required
 * 📦 Public repository starring via `public_repo` (no private repo contents)
+* 🤖 Server-side follower crawler (Neon PostgreSQL + separate worker)
 
 ## How It Works
 
@@ -24,6 +25,18 @@ It compares your **Followers** and **Following** lists to find people you follow
 6. Unfollow them directly through GitHub.
 
 The app uses GitHub's official REST API for follower/following data and follow/star management. Explore and Stars features also read public GitHub HTML for list extraction.
+
+### Crawler (optional)
+
+The crawler runs as a **separate Node process** and stores queue/state in Neon PostgreSQL (`DATABASE_URL`). Closing the browser does not stop it.
+
+1. Add `DATABASE_URL` to `.env.local` (never commit it).
+2. Apply schema: `npm run db:push` (or run `drizzle/0000_crawler.sql`).
+3. Start the app: `npm run dev` (or `npm run start`).
+4. In another terminal: `npm run crawler:worker`.
+5. Open `/crawler` → Start.
+
+On Vercel (or other serverless hosts), deploy the **web app** there and run `npm run crawler:worker` on a long-running host (Railway, Fly, VPS) with the same `DATABASE_URL`, `SESSION_SECRET`, and GitHub OAuth env vars.
 
 ## Tech Stack
 

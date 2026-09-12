@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { useI18n } from "@/components/i18n/i18n-provider";
 
 type PageHeaderProps = {
-  title: string;
+  title: React.ReactNode;
   description?: string;
   backHref?: string;
   action?: React.ReactNode;
