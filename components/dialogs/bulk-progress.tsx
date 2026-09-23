@@ -25,6 +25,7 @@ export type BulkProgressAction =
   | "star"
   | "unstar"
   | "archive"
+  | "unarchive"
   | "delete";
 
 type BulkProgressDialogProps = {
@@ -86,6 +87,14 @@ const ACTION_KEYS: Partial<
     stopTitle: "progressArchiveStopTitle",
     stopBody: "progressArchiveStopBody",
   },
+  unarchive: {
+    title: "progressUnarchiveTitle",
+    summary: "progressUnarchiveSummary",
+    working: "progressUnarchiveWorking",
+    ok: "progressUnarchiveOk",
+    stopTitle: "progressUnarchiveStopTitle",
+    stopBody: "progressUnarchiveStopBody",
+  },
   delete: {
     title: "progressDeleteTitle",
     summary: "progressDeleteSummary",
@@ -101,6 +110,7 @@ const PLAIN_NAME_ACTIONS: ReadonlySet<BulkProgressAction> = new Set([
   "star",
   "unstar",
   "archive",
+  "unarchive",
   "delete",
 ]);
 

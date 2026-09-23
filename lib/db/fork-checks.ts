@@ -66,7 +66,7 @@ export async function deleteCachedForkCheck(
 export async function logForkAction(
   ownerGithubUserId: number,
   fullName: string,
-  action: "archive" | "delete",
+  action: "archive" | "unarchive" | "delete",
 ): Promise<void> {
   const db = getDb();
   await db.insert(forkActionLog).values({

@@ -455,11 +455,13 @@ export const en = {
   cleanupNothingMatches: "Nothing matches this filter.",
   cleanupUnstarSelected: "Unstar selected",
   cleanupArchiveSelected: "Archive selected",
+  cleanupUnarchiveSelected: "Unarchive selected",
   cleanupDeleteSelected: "Delete selected",
   cleanupCheck: "Check",
   cleanupChecking: "Checking…",
   cleanupCheckAll: "Check all unchecked",
   cleanupArchive: "Archive",
+  cleanupUnarchive: "Unarchive",
   cleanupDelete: "Delete",
   cleanupNeverPushed: "never pushed",
   cleanupLastPush: "Last push {age}",
@@ -476,8 +478,12 @@ export const en = {
   confirmUnstarAction: "Unstar {count}",
   confirmArchiveTitle: "Archive {count} {repos}?",
   confirmArchiveBody:
-    "Archived repos become read-only on GitHub. You can unarchive them again later from GitHub's settings.",
+    "Archived repos become read-only on GitHub. You can unarchive them again from this app or GitHub's settings.",
   confirmArchiveAction: "Archive {count}",
+  confirmUnarchiveTitle: "Unarchive {count} {repos}?",
+  confirmUnarchiveBody:
+    "These repos will become active again on GitHub — pushes, issues, and pull requests will be allowed.",
+  confirmUnarchiveAction: "Unarchive {count}",
   confirmDeleteTitle: "Delete {count} {repos}?",
   confirmDeleteBody:
     "This permanently deletes these forks from GitHub. This cannot be undone.",
@@ -496,6 +502,13 @@ export const en = {
   progressArchiveStopTitle: "Stop archiving?",
   progressArchiveStopBody:
     "Requests that haven't been sent yet will be cancelled. Repositories already archived stay archived.",
+  progressUnarchiveTitle: "Unarchiving",
+  progressUnarchiveSummary: "{ok} unarchived{failed}{skipped}.",
+  progressUnarchiveWorking: "One at a time",
+  progressUnarchiveOk: "Unarchived",
+  progressUnarchiveStopTitle: "Stop unarchiving?",
+  progressUnarchiveStopBody:
+    "Requests that haven't been sent yet will be cancelled. Repositories already unarchived stay active.",
   progressDeleteTitle: "Deleting",
   progressDeleteSummary: "{ok} deleted{failed}{skipped}.",
   progressDeleteWorking: "One at a time",
@@ -505,6 +518,7 @@ export const en = {
     "Requests that haven't been sent yet will be cancelled. Repositories already deleted cannot be recovered from here.",
   toastCleanupUnstarred: "Unstarred {fullName}",
   toastCleanupArchived: "Archived {fullName}",
+  toastCleanupUnarchived: "Unarchived {fullName}",
   toastCleanupDeleted: "Deleted {fullName}",
   toastCleanupChecked: "Checked {fullName}",
 } as const;

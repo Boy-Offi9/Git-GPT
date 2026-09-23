@@ -76,16 +76,33 @@ export async function assertOwnedFork(
   }
 }
 
+export async function setRepoArchived(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  archived: boolean,
+): Promise<void> {
+  await githubRequest(`/repos/${enc(owner)}/${enc(repo)}`, accessToken, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ archived }),
+  });
+}
+
 export async function archiveRepo(
   accessToken: string,
   owner: string,
   repo: string,
 ): Promise<void> {
-  await githubRequest(`/repos/${enc(owner)}/${enc(repo)}`, accessToken, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ archived: true }),
-  });
+  await setRepoArchived(accessToken, owner, repo, true);
+}
+
+export async function unarchiveRepo(
+  accessToken: string,
+  owner: string,
+  repo: string,
+): Promise<void> {
+  await setRepoArchived(accessToken, owner, repo, false);
 }
 
 export async function deleteRepo(
