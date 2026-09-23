@@ -3,7 +3,8 @@ import { getGitHubOAuthConfig } from "@/lib/env";
 
 const TOKEN_URL = "https://github.com/login/oauth/access_token";
 const AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
-const OAUTH_SCOPES = "read:user user:follow public_repo offline_access";
+const OAUTH_SCOPES =
+  "read:user user:follow public_repo delete_repo offline_access";
 
 export function buildAuthorizeUrl(state: string, codeChallenge: string): string {
   const { clientId, callbackUrl } = getGitHubOAuthConfig();

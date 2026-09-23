@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { formatCount } from "@/lib/format";
 import { useI18n } from "@/components/i18n/i18n-provider";
 
@@ -38,7 +36,7 @@ const COPY = {
   delete: {
     title: "confirmDeleteTitle",
     body: "confirmDeleteBody",
-    action: "confirmDeleteAction",
+    action: "confirmYes",
   },
 } as const;
 
@@ -50,22 +48,12 @@ export function CleanupConfirmDialog({
   onConfirm,
 }: CleanupConfirmDialogProps) {
   const { t } = useI18n();
-  const [typed, setTyped] = useState("");
   const repos = count === 1 ? t("repoOne") : t("repoMany");
   const formatted = formatCount(count);
   const copy = COPY[kind];
-  const needsTypedConfirm = kind === "delete";
-  const confirmWord = t("confirmDeleteConfirmWord");
-  const canConfirm =
-    !needsTypedConfirm || typed.trim().toLowerCase() === confirmWord;
-
-  function close(next: boolean) {
-    if (!next) setTyped("");
-    onOpenChange(next);
-  }
 
   return (
-    <Dialog open={open} onOpenChange={close}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className="gap-4">
         <DialogHeader>
           <DialogTitle className="text-lg font-medium">
@@ -74,30 +62,13 @@ export function CleanupConfirmDialog({
           <DialogDescription>{t(copy.body)}</DialogDescription>
         </DialogHeader>
 
-        {needsTypedConfirm ? (
-          <div className="space-y-2">
-            <p className="border-l-2 border-destructive pl-3 text-sm leading-6 text-muted-foreground">
-              {t("confirmDeleteWarning")}
-            </p>
-            <Input
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              placeholder={confirmWord}
-              autoComplete="off"
-              aria-label={t("confirmDeleteWarning")}
-            />
-          </div>
-        ) : null}
-
         <DialogFooter>
-          <Button variant="outline" onClick={() => close(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
           <Button
             variant={kind === "unstar" ? "default" : "destructive"}
-            disabled={!canConfirm}
             onClick={() => {
-              setTyped("");
               onOpenChange(false);
               onConfirm();
             }}

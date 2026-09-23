@@ -34,6 +34,11 @@ import { useI18n } from "@/components/i18n/i18n-provider";
 
 type BulkKind = "archive" | "delete";
 
+type PendingConfirm = {
+  kind: BulkKind;
+  targets: string[];
+};
+
 export function ForksCleanupView() {
   const { t } = useI18n();
   const router = useRouter();
@@ -46,7 +51,7 @@ export function ForksCleanupView() {
   const [view, setView] = useState<ForkView>("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [confirmKind, setConfirmKind] = useState<BulkKind | null>(null);
+  const [confirm, setConfirm] = useState<PendingConfirm | null>(null);
   const [progressOpen, setProgressOpen] = useState(false);
   const [progressAction, setProgressAction] = useState<BulkKind>("archive");
   const [progress, setProgress] = useState<BulkUnfollowProgress>(
@@ -157,6 +162,11 @@ export function ForksCleanupView() {
   }
 
   async function actOne(fullName: string, kind: BulkKind) {
+    if (kind === "archive") {
+      const target = (forks ?? []).find((f) => f.fullName === fullName);
+      if (target?.archived) return;
+    }
+
     setRowPending(fullName);
     try {
       if (kind === "archive") {
@@ -188,7 +198,14 @@ export function ForksCleanupView() {
   }
 
   async function runQueue(fullNames: string[], kind: BulkKind) {
-    if (fullNames.length === 0) return;
+    const targets =
+      kind === "archive"
+        ? fullNames.filter((name) => {
+            const fork = (forks ?? []).find((f) => f.fullName === name);
+            return fork && !fork.archived;
+          })
+        : fullNames;
+    if (targets.length === 0) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -198,13 +215,13 @@ export function ForksCleanupView() {
     setRunId(nextRunId);
 
     setProgressAction(kind);
-    setProgress(emptyBulkProgress(fullNames.length));
+    setProgress(emptyBulkProgress(targets.length));
     setResult(null);
     setCancelling(false);
     setProgressOpen(true);
 
     const bulk = await runForkActionMany(
-      fullNames,
+      targets,
       kind,
       (next) => {
         if (runIdRef.current === nextRunId) setProgress(next);
@@ -374,23 +391,44 @@ export function ForksCleanupView() {
                             ) : null}
                             {t("cleanupCheck")}
                           </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="rounded-sm"
-                            disabled={progressOpen || rowPending === fork.fullName}
-                            onClick={() => void actOne(fork.fullName, "archive")}
-                          >
-                            {t("cleanupArchive")}
-                          </Button>
+                          {fork.archived ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="rounded-sm"
+                              disabled
+                            >
+                              {t("cleanupFilterArchived")}
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="rounded-sm"
+                              disabled={
+                                progressOpen || rowPending === fork.fullName
+                              }
+                              onClick={() =>
+                                void actOne(fork.fullName, "archive")
+                              }
+                            >
+                              {t("cleanupArchive")}
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             size="sm"
                             variant="destructive"
                             className="rounded-sm"
                             disabled={progressOpen || rowPending === fork.fullName}
-                            onClick={() => void actOne(fork.fullName, "delete")}
+                            onClick={() =>
+                              setConfirm({
+                                kind: "delete",
+                                targets: [fork.fullName],
+                              })
+                            }
                           >
                             {t("cleanupDelete")}
                           </Button>
@@ -444,14 +482,18 @@ export function ForksCleanupView() {
               <Button
                 variant="outline"
                 className="rounded-sm"
-                onClick={() => setConfirmKind("archive")}
+                onClick={() =>
+                  setConfirm({ kind: "archive", targets: [...selected] })
+                }
               >
                 {t("cleanupArchiveSelected")}
               </Button>
               <Button
                 variant="destructive"
                 className="rounded-sm"
-                onClick={() => setConfirmKind("delete")}
+                onClick={() =>
+                  setConfirm({ kind: "delete", targets: [...selected] })
+                }
               >
                 {t("cleanupDeleteSelected")}
               </Button>
@@ -461,16 +503,21 @@ export function ForksCleanupView() {
       ) : null}
 
       <CleanupConfirmDialog
-        open={confirmKind !== null}
-        kind={confirmKind ?? "archive"}
-        count={selected.size}
+        open={confirm !== null}
+        kind={confirm?.kind ?? "archive"}
+        count={confirm?.targets.length ?? 0}
         onOpenChange={(open) => {
-          if (!open) setConfirmKind(null);
+          if (!open) setConfirm(null);
         }}
         onConfirm={() => {
-          const kind = confirmKind ?? "archive";
-          setConfirmKind(null);
-          void runQueue([...selected], kind);
+          const next = confirm;
+          setConfirm(null);
+          if (!next || next.targets.length === 0) return;
+          if (next.targets.length === 1) {
+            void actOne(next.targets[0], next.kind);
+            return;
+          }
+          void runQueue(next.targets, next.kind);
         }}
       />
 

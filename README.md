@@ -52,9 +52,7 @@ On Vercel (or other serverless hosts), deploy the **web app** there and run `npm
 
 Git-GPT uses GitHub OAuth instead of asking for your GitHub password.
 
-The application requests `read:user`, `user:follow`, and `public_repo` so it can manage follows and star public repositories. It does not need access to private repository contents.
-
-> **Note:** deleting a fork from the cleanup view calls GitHub's repo-delete endpoint, which requires the `delete_repo` OAuth scope. That scope is not currently requested by the sign-in flow, so delete will return a permission error until `delete_repo` is added to the GitHub OAuth `scope` parameter (and existing users re-authorize). Archiving does not need it.
+The application requests `read:user`, `user:follow`, `public_repo`, and `delete_repo` so it can manage follows, star public repositories, and delete owned forks from cleanup. It does not need access to private repository contents. Existing users must sign out and sign in again (re-authorize) after `delete_repo` is added.
 
 ## Open Source
 

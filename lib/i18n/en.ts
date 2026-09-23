@@ -481,9 +481,7 @@ export const en = {
   confirmDeleteTitle: "Delete {count} {repos}?",
   confirmDeleteBody:
     "This permanently deletes these forks from GitHub. This cannot be undone.",
-  confirmDeleteWarning: "Type delete to confirm.",
-  confirmDeleteConfirmWord: "delete",
-  confirmDeleteAction: "Delete {count}",
+  confirmYes: "Yes",
   progressUnstarTitle: "Unstarring",
   progressUnstarSummary: "{ok} unstarred{failed}{skipped}.",
   progressUnstarWorking: "One at a time",
