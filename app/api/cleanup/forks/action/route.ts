@@ -10,16 +10,17 @@ import {
   assertOwnedFork,
   deleteRepo,
   ForkActionError,
+  unarchiveRepo,
 } from "@/lib/github/fork-cleanup";
 import { parseRepoFullName } from "@/lib/github/validate";
 import { deleteCachedForkCheck, logForkAction } from "@/lib/db/fork-checks";
 
 export const dynamic = "force-dynamic";
 
-type ForkAction = "archive" | "delete";
+type ForkAction = "archive" | "unarchive" | "delete";
 
 function isForkAction(value: unknown): value is ForkAction {
-  return value === "archive" || value === "delete";
+  return value === "archive" || value === "unarchive" || value === "delete";
 }
 
 export async function POST(request: Request) {
@@ -57,6 +58,8 @@ export async function POST(request: Request) {
       await assertOwnedFork(token, auth.session.login, parsed.owner, parsed.repo);
       if (action === "archive") {
         await archiveRepo(token, parsed.owner, parsed.repo);
+      } else if (action === "unarchive") {
+        await unarchiveRepo(token, parsed.owner, parsed.repo);
       } else {
         await deleteRepo(token, parsed.owner, parsed.repo);
       }

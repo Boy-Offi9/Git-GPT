@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { formatCount } from "@/lib/format";
 import { useI18n } from "@/components/i18n/i18n-provider";
 
-type CleanupConfirmKind = "unstar" | "archive" | "delete";
+type CleanupConfirmKind = "unstar" | "archive" | "unarchive" | "delete";
 
 type CleanupConfirmDialogProps = {
   open: boolean;
@@ -32,6 +32,11 @@ const COPY = {
     title: "confirmArchiveTitle",
     body: "confirmArchiveBody",
     action: "confirmArchiveAction",
+  },
+  unarchive: {
+    title: "confirmUnarchiveTitle",
+    body: "confirmUnarchiveBody",
+    action: "confirmUnarchiveAction",
   },
   delete: {
     title: "confirmDeleteTitle",
@@ -67,7 +72,9 @@ export function CleanupConfirmDialog({
             {t("cancel")}
           </Button>
           <Button
-            variant={kind === "unstar" ? "default" : "destructive"}
+            variant={
+              kind === "delete" || kind === "archive" ? "destructive" : "default"
+            }
             onClick={() => {
               onOpenChange(false);
               onConfirm();

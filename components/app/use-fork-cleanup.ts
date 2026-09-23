@@ -27,9 +27,11 @@ export async function checkForkOnce(fullName: string): Promise<ForkCheck> {
   return body.check;
 }
 
+export type ForkCleanupAction = "archive" | "unarchive" | "delete";
+
 async function postForkAction(
   fullName: string,
-  action: "archive" | "delete",
+  action: ForkCleanupAction,
 ): Promise<void> {
   const response = await fetch("/api/cleanup/forks/action", {
     method: "POST",
@@ -46,13 +48,17 @@ export async function archiveForkOnce(fullName: string): Promise<void> {
   await postForkAction(fullName, "archive");
 }
 
+export async function unarchiveForkOnce(fullName: string): Promise<void> {
+  await postForkAction(fullName, "unarchive");
+}
+
 export async function deleteForkOnce(fullName: string): Promise<void> {
   await postForkAction(fullName, "delete");
 }
 
 export function runForkActionMany(
   fullNames: string[],
-  action: "archive" | "delete",
+  action: ForkCleanupAction,
   onProgress: (progress: BulkUnfollowProgress) => void,
   signal?: AbortSignal,
 ) {

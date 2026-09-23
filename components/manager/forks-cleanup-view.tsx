@@ -21,6 +21,7 @@ import {
   checkForkOnce,
   deleteForkOnce,
   runForkActionMany,
+  unarchiveForkOnce,
 } from "@/components/app/use-fork-cleanup";
 import { StalenessGauge } from "@/components/app/staleness-gauge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ import { BulkProgressDialog } from "@/components/dialogs/bulk-progress";
 import { CleanupConfirmDialog } from "@/components/dialogs/cleanup-confirm";
 import { useI18n } from "@/components/i18n/i18n-provider";
 
-type BulkKind = "archive" | "delete";
+type BulkKind = "archive" | "unarchive" | "delete";
 
 type PendingConfirm = {
   kind: BulkKind;
@@ -162,10 +163,9 @@ export function ForksCleanupView() {
   }
 
   async function actOne(fullName: string, kind: BulkKind) {
-    if (kind === "archive") {
-      const target = (forks ?? []).find((f) => f.fullName === fullName);
-      if (target?.archived) return;
-    }
+    const target = (forks ?? []).find((f) => f.fullName === fullName);
+    if (kind === "archive" && target?.archived) return;
+    if (kind === "unarchive" && !target?.archived) return;
 
     setRowPending(fullName);
     try {
@@ -177,9 +177,19 @@ export function ForksCleanupView() {
           ),
         );
         toast.success(t("toastCleanupArchived", { fullName }));
+      } else if (kind === "unarchive") {
+        await unarchiveForkOnce(fullName);
+        setForks((current) =>
+          (current ?? []).map((f) =>
+            f.fullName === fullName ? { ...f, archived: false } : f,
+          ),
+        );
+        toast.success(t("toastCleanupUnarchived", { fullName }));
       } else {
         await deleteForkOnce(fullName);
-        setForks((current) => (current ?? []).filter((f) => f.fullName !== fullName));
+        setForks((current) =>
+          (current ?? []).filter((f) => f.fullName !== fullName),
+        );
         toast.success(t("toastCleanupDeleted", { fullName }));
       }
       setSelected((current) => {
@@ -198,13 +208,13 @@ export function ForksCleanupView() {
   }
 
   async function runQueue(fullNames: string[], kind: BulkKind) {
-    const targets =
-      kind === "archive"
-        ? fullNames.filter((name) => {
-            const fork = (forks ?? []).find((f) => f.fullName === name);
-            return fork && !fork.archived;
-          })
-        : fullNames;
+    const targets = fullNames.filter((name) => {
+      const fork = (forks ?? []).find((f) => f.fullName === name);
+      if (!fork) return false;
+      if (kind === "archive") return !fork.archived;
+      if (kind === "unarchive") return fork.archived;
+      return true;
+    });
     if (targets.length === 0) return;
 
     abortRef.current?.abort();
@@ -239,8 +249,16 @@ export function ForksCleanupView() {
             done.has(f.fullName) ? { ...f, archived: true } : f,
           ),
         );
+      } else if (kind === "unarchive") {
+        setForks((current) =>
+          (current ?? []).map((f) =>
+            done.has(f.fullName) ? { ...f, archived: false } : f,
+          ),
+        );
       } else {
-        setForks((current) => (current ?? []).filter((f) => !done.has(f.fullName)));
+        setForks((current) =>
+          (current ?? []).filter((f) => !done.has(f.fullName)),
+        );
       }
     }
 
@@ -397,9 +415,14 @@ export function ForksCleanupView() {
                               size="sm"
                               variant="outline"
                               className="rounded-sm"
-                              disabled
+                              disabled={
+                                progressOpen || rowPending === fork.fullName
+                              }
+                              onClick={() =>
+                                void actOne(fork.fullName, "unarchive")
+                              }
                             >
-                              {t("cleanupFilterArchived")}
+                              {t("cleanupUnarchive")}
                             </Button>
                           ) : (
                             <Button
@@ -478,7 +501,7 @@ export function ForksCleanupView() {
                 {t("clearSelection")}
               </button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button
                 variant="outline"
                 className="rounded-sm"
@@ -487,6 +510,15 @@ export function ForksCleanupView() {
                 }
               >
                 {t("cleanupArchiveSelected")}
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-sm"
+                onClick={() =>
+                  setConfirm({ kind: "unarchive", targets: [...selected] })
+                }
+              >
+                {t("cleanupUnarchiveSelected")}
               </Button>
               <Button
                 variant="destructive"
