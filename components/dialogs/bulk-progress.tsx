@@ -13,10 +13,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCount } from "@/lib/format";
 import { useI18n } from "@/components/i18n/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/core";
 import type {
   BulkUnfollowProgress,
   BulkUnfollowResult,
 } from "@/types/github";
+
+export type BulkProgressAction =
+  | "unfollow"
+  | "follow"
+  | "star"
+  | "unstar"
+  | "archive"
+  | "delete";
 
 type BulkProgressDialogProps = {
   open: boolean;
@@ -25,11 +34,75 @@ type BulkProgressDialogProps = {
   result: BulkUnfollowResult | null;
   cancelling?: boolean;
   concurrency?: number;
-  action?: "unfollow" | "follow" | "star";
+  action?: BulkProgressAction;
   onStop: () => void;
   onClose: () => void;
   onRetry: () => void;
 };
+
+/** Per-action copy. Anything not listed here falls back to the "unfollow" wording. */
+const ACTION_KEYS: Partial<
+  Record<
+    BulkProgressAction,
+    {
+      title: MessageKey;
+      summary: MessageKey;
+      working: MessageKey;
+      ok: MessageKey;
+      stopTitle: MessageKey;
+      stopBody: MessageKey;
+    }
+  >
+> = {
+  follow: {
+    title: "progressFollowTitle",
+    summary: "progressFollowSummary",
+    working: "progressFollowWorking",
+    ok: "progressFollowOk",
+    stopTitle: "progressFollowStopTitle",
+    stopBody: "progressFollowStopBody",
+  },
+  star: {
+    title: "progressStarTitle",
+    summary: "progressStarSummary",
+    working: "progressStarWorking",
+    ok: "progressStarOk",
+    stopTitle: "progressStarStopTitle",
+    stopBody: "progressStarStopBody",
+  },
+  unstar: {
+    title: "progressUnstarTitle",
+    summary: "progressUnstarSummary",
+    working: "progressUnstarWorking",
+    ok: "progressUnstarOk",
+    stopTitle: "progressUnstarStopTitle",
+    stopBody: "progressUnstarStopBody",
+  },
+  archive: {
+    title: "progressArchiveTitle",
+    summary: "progressArchiveSummary",
+    working: "progressArchiveWorking",
+    ok: "progressArchiveOk",
+    stopTitle: "progressArchiveStopTitle",
+    stopBody: "progressArchiveStopBody",
+  },
+  delete: {
+    title: "progressDeleteTitle",
+    summary: "progressDeleteSummary",
+    working: "progressDeleteWorking",
+    ok: "progressDeleteOk",
+    stopTitle: "progressDeleteStopTitle",
+    stopBody: "progressDeleteStopBody",
+  },
+};
+
+/** Rows in the "sending now" list are shown as plain names rather than "@login" for these actions. */
+const PLAIN_NAME_ACTIONS: ReadonlySet<BulkProgressAction> = new Set([
+  "star",
+  "unstar",
+  "archive",
+  "delete",
+]);
 
 export function BulkProgressDialog({
   open,
@@ -58,42 +131,13 @@ export function BulkProgressDialog({
       ? 0
       : Math.round((progress.sent / progress.total) * 100);
 
-  const runningTitle =
-    action === "follow"
-      ? t("progressFollowTitle")
-      : action === "star"
-        ? t("progressStarTitle")
-        : t("progressTitle");
-  const summaryKey =
-    action === "follow"
-      ? "progressFollowSummary"
-      : action === "star"
-        ? "progressStarSummary"
-        : "progressSummary";
-  const workingKey =
-    action === "follow" || action === "star"
-      ? action === "star"
-        ? "progressStarWorking"
-        : "progressFollowWorking"
-      : "progressWorking";
-  const okLabel =
-    action === "follow"
-      ? t("progressFollowOk")
-      : action === "star"
-        ? t("progressStarOk")
-        : t("progressOk");
-  const stopTitle =
-    action === "follow"
-      ? t("progressFollowStopTitle")
-      : action === "star"
-        ? t("progressStarStopTitle")
-        : t("progressStopTitle");
-  const stopBody =
-    action === "follow"
-      ? t("progressFollowStopBody")
-      : action === "star"
-        ? t("progressStarStopBody")
-        : t("progressStopBody");
+  const copy = ACTION_KEYS[action];
+  const runningTitle = copy ? t(copy.title) : t("progressTitle");
+  const summaryKey = copy ? copy.summary : "progressSummary";
+  const workingKey = copy ? copy.working : "progressWorking";
+  const okLabel = copy ? t(copy.ok) : t("progressOk");
+  const stopTitle = copy ? t(copy.stopTitle) : t("progressStopTitle");
+  const stopBody = copy ? t(copy.stopBody) : t("progressStopBody");
 
   const title = running
     ? cancelling
@@ -201,7 +245,7 @@ export function BulkProgressDialog({
                     className="h-5 truncate leading-5 text-foreground"
                   >
                     {login
-                      ? action === "star"
+                      ? PLAIN_NAME_ACTIONS.has(action)
                         ? login
                         : `@${login}`
                       : "\u00A0"}
