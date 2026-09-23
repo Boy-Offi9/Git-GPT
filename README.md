@@ -14,6 +14,7 @@ It compares your **Followers** and **Following** lists to find people you follow
 * 🛡️ No GitHub password required
 * 📦 Public repository starring via `public_repo` (no private repo contents)
 * 🤖 Server-side follower crawler (Neon PostgreSQL + separate worker)
+* 🧹 Clean up stars and forks — spot repos that have gone stale, check a fork against its upstream, and unstar/archive/delete in bulk
 
 ## How It Works
 
@@ -51,7 +52,7 @@ On Vercel (or other serverless hosts), deploy the **web app** there and run `npm
 
 Git-GPT uses GitHub OAuth instead of asking for your GitHub password.
 
-The application requests `read:user`, `user:follow`, and `public_repo` so it can manage follows and star public repositories. It does not need access to private repository contents.
+The application requests `read:user`, `user:follow`, `public_repo`, and `delete_repo` so it can manage follows, star public repositories, and delete owned forks from cleanup. It does not need access to private repository contents. Existing users must sign out and sign in again (re-authorize) after `delete_repo` is added.
 
 ## Open Source
 

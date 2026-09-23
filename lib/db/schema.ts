@@ -149,3 +149,58 @@ export const crawlerLogs = pgTable(
     ),
   ],
 );
+
+/**
+ * Cached result of comparing an owned fork's default branch against its
+ * upstream parent's. Populated by the "Check" action in the fork cleanup
+ * view so repeated visits don't re-hit GitHub's compare endpoint.
+ */
+export const forkChecks = pgTable(
+  "fork_checks",
+  {
+    id: serial("id").primaryKey(),
+    ownerGithubUserId: bigint("owner_github_user_id", {
+      mode: "number",
+    }).notNull(),
+    fullName: varchar("full_name", { length: 200 }).notNull(),
+    /** Upstream repo's full name, or null when GitHub no longer reports one. */
+    parent: varchar("parent", { length: 200 }),
+    /** Commits on the fork upstream doesn't have. Null when undetermined. */
+    aheadBy: integer("ahead_by"),
+    checkedAt: timestamp("checked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("fork_checks_owner_full_name_uidx").on(
+      table.ownerGithubUserId,
+      table.fullName,
+    ),
+    index("fork_checks_owner_checked_idx").on(
+      table.ownerGithubUserId,
+      table.checkedAt,
+    ),
+  ],
+);
+
+/** True once a fork has been deliberately archived or deleted from cleanup, kept for audit. */
+export const forkActionLog = pgTable(
+  "fork_action_log",
+  {
+    id: serial("id").primaryKey(),
+    ownerGithubUserId: bigint("owner_github_user_id", {
+      mode: "number",
+    }).notNull(),
+    fullName: varchar("full_name", { length: 200 }).notNull(),
+    action: varchar("action", { length: 16 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("fork_action_log_owner_created_idx").on(
+      table.ownerGithubUserId,
+      table.createdAt,
+    ),
+  ],
+);
