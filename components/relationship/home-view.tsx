@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Bot,
+  CalendarDays,
   ChevronRight,
   Compass,
   LoaderCircle,
@@ -113,6 +114,13 @@ function HomeReady({
       title: t("homeToolCrawler"),
       hint: t("homeToolCrawlerHint"),
       vip: true,
+    },
+    {
+      href: "/activity",
+      icon: CalendarDays,
+      title: t("homeToolActivity"),
+      hint: t("homeToolActivityHint"),
+      vip: false,
     },
   ] as const;
 
