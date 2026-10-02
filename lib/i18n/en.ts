@@ -542,6 +542,42 @@ export const en = {
   followerHistoryTotals: "{gained} {followers} gained, {lost} lost all-time",
   followerOne: "follower",
   followerMany: "followers",
+
+  profileContributions: "Contribution insights",
+  contributionsTitle: "Contribution insights",
+  contributionsHint:
+    "Your real GitHub activity over the last year — streaks, weekday patterns, and gaps.",
+  contributionsTotal: "{count} contributions in the last year",
+  contributionsLongestStreak: "Longest streak",
+  contributionsCurrentStreak: "Current streak",
+  contributionsStreakRange: "{start} – {end}",
+  contributionsNoStreak: "No active streak",
+  contributionsWeekdayTitle: "Activity by weekday",
+  contributionsMonthlyTitle: "Monthly trend",
+  contributionsGapsTitle: "Gaps in activity",
+  contributionsGapsHint: "Stretches of 3+ days with no recorded activity",
+  contributionsNoGaps: "No gaps of 3+ days in the last year",
+  contributionsGapRange: "{start} – {end} ({days} {dayWord})",
+  dayOne: "day",
+  dayMany: "days",
+
+  profileBranches: "Branch maintenance",
+  branchesTitle: "Branch maintenance",
+  branchesHint: "Pick a repository to review its branches.",
+  branchesDefaultLabel: "Default branch: {branch}",
+  branchesMerged: "Merged",
+  branchesUnmerged: "Unmerged",
+  branchesProtected: "protected",
+  branchesStatusUnknown: "Could not compare to the default branch",
+  branchesStatusMerged: "No unique commits — safe to delete",
+  branchesStatusUnmerged: "{ahead} ahead, {behind} behind the default branch",
+  branchOne: "branch",
+  branchMany: "branches",
+  confirmDeleteBranchesTitle: "Delete {count} {branches}?",
+  confirmDeleteBranchesBody:
+    "This permanently deletes these branches from GitHub. This cannot be undone.",
+  confirmDeleteBranchesAction: "Delete {count}",
+  toastBranchDeleted: "Deleted {branch}",
 } as const;
 
 export type MessageKey = keyof typeof en;
