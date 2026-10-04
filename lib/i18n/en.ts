@@ -521,6 +521,14 @@ export const en = {
   toastCleanupUnarchived: "Unarchived {fullName}",
   toastCleanupDeleted: "Deleted {fullName}",
   toastCleanupChecked: "Checked {fullName}",
+  cleanupSync: "Sync",
+  toastCleanupSynced: "Synced {fullName} with upstream",
+  toastCleanupUpToDate: "{fullName} is already up to date",
+  errorSyncNoParent: "This repository no longer has an upstream to sync from.",
+  errorSyncDiverged:
+    "This fork has commits upstream doesn't have, or couldn't be compared. Syncing is only offered for forks that are not ahead of upstream.",
+  errorSyncConflict:
+    "Syncing hit a conflict. Resolve it on GitHub, then try again.",
 
   profileFollowerHistory: "Follower history",
   followerHistoryTitle: "Follower history",
